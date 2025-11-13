@@ -1,0 +1,161 @@
+[
+    {
+        "id": "cbeb4ae153ab02a0",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "12273db4f4841695",
+        "type": "mqtt in",
+        "z": "cbeb4ae153ab02a0",
+        "name": "",
+        "topic": "meteocat/data/#",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "96e145b8837afed9",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 140,
+        "y": 440,
+        "wires": [
+            [
+                "46fa0abb3f9f3557",
+                "3378fe9eef440d39"
+            ]
+        ]
+    },
+    {
+        "id": "143e140ee040d921",
+        "type": "mysql",
+        "z": "cbeb4ae153ab02a0",
+        "mydb": "de24f0aa841967bf",
+        "name": "",
+        "x": 640,
+        "y": 440,
+        "wires": [
+            [
+                "d8a5b40dd52c6412"
+            ]
+        ],
+        "icon": "font-awesome/fa-database"
+    },
+    {
+        "id": "3378fe9eef440d39",
+        "type": "function",
+        "z": "cbeb4ae153ab02a0",
+        "name": "function 1",
+        "func": "let json = msg.payload;\n//todos los registros llevan la hora y la EMA de origen\nlet variables = [\"timestamp\",\"EMA\"];\n/*y con este for añado al array todas las variables que guarda\nla EMA, guarde las que guarde*/\nfor (let i = 0; i < json.head.fields.length; i++){\n    variables.push(Object.values(json.head.fields[i])[0]);\n}\nlet datos = [];\n/*con este for creo el array con los datos generados por la\nEMA*/\nfor (let r = 0; r < json.data.length; r++){\n    datos[r] = [\"'\"+Object.values(json.data[r])[0]+\"'\"];\n    datos[r].push(\"'\" + Object.values(json.head.environment)[0]+\"'\");\n    for (let v = 0; v < json.head.fields.length; v++){\n        datos[r].push(\"'\"+Object.values(json.data[r])[1][v]+\"'\");\n    }\n}\nmsg.payload = {variables,datos};\n/*aquí creo el mensaje para inyectar en la BBDD de mySQL\ncon las variables que se guardarán y todos los registros que\nse hayan recogido en la última comunicación*/\nmsg.topic = \"INSERT into dades_minutals (\"+variables+\") VALUES (\"+datos[0]+\")\";\nif (datos.length > 1){\n    for (let i = 1; i < datos.length; i++) {\n        msg.topic = msg.topic+\",(\"+datos[i]+\")\";\n    }\n}\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 400,
+        "y": 440,
+        "wires": [
+            [
+                "edd9c78570ec6eb6",
+                "143e140ee040d921"
+            ]
+        ],
+        "info": "La funcion deberia poder crear el codigo necesario para\r\n inyectar los datos en la base de datos mySQL, pero por\r\n algún motivo que no he decubierto NO añade las comillas\r\n a los diferentes valores del array de datos.\r\n por ese motivo utilizo los siguientes nodos \r\n"
+    },
+    {
+        "id": "d8a5b40dd52c6412",
+        "type": "debug",
+        "z": "cbeb4ae153ab02a0",
+        "name": "respuesta mySQL",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 670,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "46fa0abb3f9f3557",
+        "type": "debug",
+        "z": "cbeb4ae153ab02a0",
+        "name": "JSON original",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 140,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "edd9c78570ec6eb6",
+        "type": "debug",
+        "z": "cbeb4ae153ab02a0",
+        "name": "topic",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "topic",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 390,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "96e145b8837afed9",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "broker.mqtt.cool",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": false,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "de24f0aa841967bf",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "meteotest",
+        "tz": "",
+        "charset": "UTF8"
+    }
+]
